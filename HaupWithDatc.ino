@@ -4,9 +4,8 @@
 #include <MQUnifiedsensor.h>
 #include <Servo.h>
 
-
-byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress serverIP(192, 168, 1, 100);
+char serverName[] = "makarovv25.pythonanywhere.com";
+byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // Change this to your Ethernet shield's MAC address
 EthernetServer server(80);
 
 #define DHTPIN 2
@@ -17,20 +16,24 @@ DHT dht(DHTPIN, DHTTYPE);
 #define MQ_PIN A0
 MQUnifiedsensor mq("Arduino", 5, 10, MQ_PIN, MQ_SENSOR_TYPE);
 
-boolean windowsAreOpen = false;  // Начальное значение
+boolean windowsAreOpen = false;  // Initial value
 
-// Подключение реле к пину 7
+// Connect the relay to pin 7
 const int relayPin = 7;
-Servo windowServo;  // Создаем объект Servo для управления сервоприводом
-const int servoPin = 9;  // Пин, к которому подключен сервопривод
+Servo windowServo;  // Create a Servo object to control the servo motor
+const int servoPin = 9;  // Pin to which the servo motor is connected
+
 void setup() {
   Serial.begin(9600);
-  windowServo.attach(servoPin);  // Прикрепляем сервопривод к соответствующему пину
+  windowServo.attach(servoPin);  // Attach the servo motor to the corresponding pin
   pinMode(relayPin, OUTPUT);
 
+  // Initialize Ethernet with obtaining IP and MAC address via DHCP
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
-    for (;;);
+    while (true) {
+      delay(1);
+    }
   }
 
   server.begin();
@@ -48,6 +51,9 @@ void loop() {
 
   delay(5000);
 }
+
+// Other functions remain unchanged...
+
 
 void sendSensorData(float humidity, float temperature, float gasValue) {
   byte mac[6];
@@ -81,7 +87,7 @@ void sendSensorData(float humidity, float temperature, float gasValue) {
 
     // Отправка POST-запроса
     client.print("POST " + url + " HTTP/1.1\r\n" +
-                 "Host: " + serverIP + "\r\n" +
+                 "Host: " + serverName + "\r\n" +
                  "Content-Type: application/json\r\n" +
                  "Content-Length: " + jsonData.length() + "\r\n" +
                  "Connection: close\r\n\r\n");
@@ -122,6 +128,9 @@ void handleGETRequests() {
             client.println("Connection: close");
             client.println();
 
+            byte mac[6];
+            Ethernet.MACAddress(mac);
+
             String response = "{\"mac\":\"";
             for (int i = 0; i < 6; i++) {
               if (mac[i] < 0x10) {
@@ -140,7 +149,7 @@ void handleGETRequests() {
               openWindows();
             }
 
-            break;
+break;
           }
         }
         if (c == '\n') {
@@ -177,9 +186,6 @@ boolean macAddressMatch(String request) {
 
   return request.indexOf(macString) != -1;
 }
-
-
-
 
 void openWindows() {
   windowServo.write(180);  // Поворачиваем сервопривод на 180 градусов (или другое подходящее значение)
