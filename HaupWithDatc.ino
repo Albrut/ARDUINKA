@@ -2,6 +2,8 @@
 #include <Ethernet.h>
 #include <DHT.h>
 #include <MQUnifiedsensor.h>
+#include <Servo.h>
+
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress serverIP(192, 168, 1, 100);
@@ -19,10 +21,11 @@ boolean windowsAreOpen = false;  // Начальное значение
 
 // Подключение реле к пину 7
 const int relayPin = 7;
-
+Servo windowServo;  // Создаем объект Servo для управления сервоприводом
+const int servoPin = 9;  // Пин, к которому подключен сервопривод
 void setup() {
   Serial.begin(9600);
-
+  windowServo.attach(servoPin);  // Прикрепляем сервопривод к соответствующему пину
   pinMode(relayPin, OUTPUT);
 
   if (Ethernet.begin(mac) == 0) {
@@ -175,9 +178,11 @@ boolean macAddressMatch(String request) {
   return request.indexOf(macString) != -1;
 }
 
+
+
+
 void openWindows() {
-  // Здесь вставьте код для управления окном
-  // Например, для реле
-  digitalWrite(relayPin, HIGH);
+  windowServo.write(180);  // Поворачиваем сервопривод на 180 градусов (или другое подходящее значение)
+  delay(1000);  // Даем времени для полного открытия окна
   Serial.println("Windows are open!");
 }
